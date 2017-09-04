@@ -24,9 +24,10 @@ expressApp.use(bodyParser.urlencoded({ extended: true }))
 //set the authRoutes for registration and & login requests
 expressApp.use('/auth', authRoutes)
 
+//set the restrictedAreaRoutes used to demo the accesiblity or routes that ar OAuth2 protected 
 expressApp.use('/restrictedArea', restrictedAreaRoutes)
 
-//set the oAuth
+//set the oAuth errorHandler
 expressApp.use(expressApp.oauth.errorHandler());
 
 //init the server
