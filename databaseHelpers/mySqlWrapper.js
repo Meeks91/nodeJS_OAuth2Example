@@ -7,9 +7,11 @@ module.exports = {
 const mySql = require('mysql')
 
 //object which holds the connection to the db
-let connection = null;
+let connection = null
 
-//create the connection to the db
+/**
+ * Create the connection to the db
+ */
 function initConnection() {
 
   //set the global connection object
@@ -22,8 +24,13 @@ function initConnection() {
   })
 }
 
-//executes the specified sql query and provides a callback which is given a
-//dataResponseObject
+/**
+ * executes the specified sql query and provides a callback which is given
+ * with the results in a DataResponseObject
+ *
+ * @param queryString
+ * @param callback - takes a DataResponseObject
+ */
 function query(queryString, callback){
 
   //init the connection object. Needs to be done everytime as we call end()
@@ -46,8 +53,14 @@ function query(queryString, callback){
   })
 }
 
-//creates and returns a DataResponseObject made out of the specified parameters
-//DataResponseObject has two variables. An error which is a boolean and the results of the query.
+/**
+ * creates and returns a DataResponseObject made out of the specified parameters.
+ * A DataResponseObject has two variables. An error which is a boolean and the results of the query.
+ *
+ * @param error
+ * @param results
+ * @return {DataResponseObject<{error, results}>}
+ */
 function createDataResponseObject(error, results) {
 
     return {

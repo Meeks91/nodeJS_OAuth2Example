@@ -10,12 +10,15 @@ module.exports = injectedMySqlConnection => {
  }
 }
 
-/* Saves the accessToken against the user with the specified userID
-It provides the results in a callback which takes 2 parameters:
-1. An error object which will be set to null if there is no error. */
+/**
+ * Saves the accessToken against the user with the specified userID
+ * It provides the results in a callback which takes 2 parameters:
+ *
+ * @param accessToken
+ * @param userID
+ * @param callback - takes either an error or null if we successfully saved the accessToken
+ */
 function saveAccessToken(accessToken, userID, callback) {
-
-console.log('accessToken is: ', accessToken);
 
   const getUserQuery =  `INSERT INTO access_tokens (access_token, user_id) VALUES ("${accessToken}", ${userID}) ON DUPLICATE KEY UPDATE access_token = "${accessToken}";`
 
@@ -27,9 +30,13 @@ console.log('accessToken is: ', accessToken);
   })
 }
 
-/* Retrieves the userID from the row which has the spcecified bearerToken. It passes the userID
-  to the callback if it has been retrieved else it passes null
-  */
+/**
+ * Retrieves the userID from the row which has the spcecified bearerToken. It passes the userID
+ * to the callback if it has been retrieved else it passes null
+ *
+ * @param bearerToken
+ * @param callback - takes the user id we if we got the userID or null to represent an error
+ */
 function getUserIDFromBearerToken(bearerToken, callback){
 
   //create query to get the userID from the row which has the bearerToken
