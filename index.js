@@ -1,3 +1,5 @@
+//MARK: --- REQUIRE MODULES
+
 const port = 8080
 const mySqlConnection = require('./databaseHelpers/mySqlWrapper')
 const accessTokenDBHelper = require('./databaseHelpers/accessTokensDBHelper')(mySqlConnection)
@@ -18,22 +20,26 @@ const authRoutesMethods = require('./authorisation/authRoutesMethods')(userDBHel
 const authRoutes = require('./authorisation/authRoutes')(express.Router(), expressApp, authRoutesMethods)
 const bodyParser = require('body-parser')
 
+//MARK: --- REQUIRE MODULES
+
+//MARK: --- INITIALISE MIDDLEWARE & ROUTES
+
 //set the bodyParser to parse the urlencoded post data
 expressApp.use(bodyParser.urlencoded({ extended: true }))
+
+//set the oAuth errorHandler
+expressApp.use(expressApp.oauth.errorHandler())
 
 //set the authRoutes for registration and & login requests
 expressApp.use('/auth', authRoutes)
 
-//set the restrictedAreaRoutes used to demo the accesiblity or routes that ar OAuth2 protected 
+//set the restrictedAreaRoutes used to demo the accesiblity or routes that ar OAuth2 protected
 expressApp.use('/restrictedArea', restrictedAreaRoutes)
 
-//set the oAuth errorHandler
-expressApp.use(expressApp.oauth.errorHandler());
+//MARK: --- INITIALISE MIDDLEWARE & ROUTES
 
 //init the server
 expressApp.listen(port, () => {
 
    console.log(`listening on port ${port}`)
 })
-
-
