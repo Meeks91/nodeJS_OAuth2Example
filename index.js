@@ -23,6 +23,7 @@ const bodyParser = require('body-parser')
 //MARK: --- REQUIRE MODULES
 
 //MARK: --- INITIALISE MIDDLEWARE & ROUTES
+expressApp.use('/', express.static('public'))
 
 //set the bodyParser to parse the urlencoded post data
 expressApp.use(bodyParser.urlencoded({ extended: true }))
@@ -40,6 +41,5 @@ expressApp.use('/restrictedArea', restrictedAreaRoutes)
 
 //init the server
 expressApp.listen(port, () => {
-
    console.log(`listening on port ${port}`)
 })

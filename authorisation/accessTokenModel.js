@@ -77,7 +77,7 @@ function saveAccessToken(accessToken, clientID, expires, user, callback){
   ' and clientID is: ',clientID, ' and user is: ', user, ' and accessTokensDBhelper is: ', accessTokensDBHelper)
 
     //save the accessToken along with the user.id
-    accessTokensDBHelper.saveAccessToken(accessToken, user.id, callback)
+    accessTokensDBHelper.saveAccessToken(accessToken, user.user_id, callback)
 }
 
 /* This method is called when a user is using a bearerToken they've already got as authentication

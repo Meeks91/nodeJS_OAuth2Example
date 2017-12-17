@@ -1,27 +1,12 @@
-module.exports = {
+const 
+  mySql = require('mysql'),
+  connectMap = require('../config/credentials.js' )
 
-  query: query
-}
+let mysqlConnectObj //object which holds the connection to the db
 
-//get the mySql object
-const mySql = require('mysql')
-
-//object which holds the connection to the db
-let connection = null
-
-/**
- * Create the connection to the db
- */
+// Create the connection to the db
 function initConnection() {
-
-  //set the global connection object
-   connection = mySql.createConnection({
-
-    host: 'localhost',
-    user: 'root',
-    password: 'databasePassword',
-    database: 'oAuth2Test'
-  })
+   mysqlConnectObj = mySql.createConnection( connectMap );
 }
 
 /**
@@ -33,22 +18,22 @@ function initConnection() {
  */
 function query(queryString, callback){
 
-  //init the connection object. Needs to be done everytime as we call end()
-  //on the connection after the call is complete
+  // Init the connection object. Needs to be done everytime as we call end()
+  //  on the connection after the call is complete
   initConnection()
 
-  //connect to the db
-  connection.connect()
+  // Connect to the db
+  mysqlConnectObj.connect()
 
-  //execute the query and collect the results in the callback
-  connection.query(queryString, function(error, results, fields){
+  // Execute the query and collect the results in the callback
+  mysqlConnectObj.query(queryString, function(error, results, fields){
 
       console.log('mySql: query: error is: ', error, ' and results are: ', results);
 
-    //disconnect from the method
-    connection.end();
+    // Disconnect from db
+    mysqlConnectObj.end();
 
-    //send the response in the callback
+    // Send response in callback
     callback(createDataResponseObject(error, results))
   })
 }
@@ -68,3 +53,5 @@ function createDataResponseObject(error, results) {
       results: results === undefined ? null : results === null ? null : results
      }
   }
+
+module.exports = { query: query }
