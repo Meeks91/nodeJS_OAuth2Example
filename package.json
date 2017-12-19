@@ -6,11 +6,13 @@
   "dependencies": {
     "bluebird": "^3.5.0",
     "body-parser": "^1.17.2",
-    "express": "^4.15.3",
+    "cookie-parser": "^1.4.3",
+    "eslint": "^4.13.1",
+    "express": "^4.16.2",
     "mysql": "^2.13.0",
-    "node-oauth2-server": "^2.4.0"
+    "node-oauth2-server": "^2.4.0",
+    "request": "^2.83.0"
   },
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"

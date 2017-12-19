@@ -1,1 +1,42 @@
-Add login form here
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Login page</title>
+  <!-- meta -->
+  <meta name="viewport" content="width=device-width user-scalable=no
+    initial-scale=1,maximum-scale=1"/>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta charset="utf-8">
+  <!-- ie9+ rendering support for latest standards -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="description" content="">
+  <meta name="keywords" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- favicon -->
+  <link href="img/favicon.png" rel="shortcut icon">
+
+  <!-- stylesheets -->
+  <style>
+    html { 
+      font-family: arial, helvetica, sans-serif;
+      font-size: 16px;
+    }
+    body { margin : 2rem }
+    input[type=text],input[type=password],input[type=submit] {
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+<form method="post">
+<!-- TODO: look up client_secret on server and call token -->
+<!-- input type="hidden"   name="grant_type" value="password" -->
+<!-- input type="hidden"   name="client_secret" value="secret" -->
+<input type="hidden"   name="client_id"  value="application">
+<input type="text"     name="username"   placeholder="Username"><br>
+<input type="password" name="password"   placeholder="Password"><br>
+<input type="submit"   value="Submit">
+</form>
+</body>
+</html>
