@@ -1,26 +1,30 @@
 //MARK: --- REQUIRE MODULES
 
-const port = 8080;
-const mySqlConnection = require('./databaseHelpers/mySqlWrapper');
-const accessTokenDBHelper = require('./databaseHelpers/accessTokensDBHelper')(mySqlConnection);
-const userDBHelper = require('./databaseHelpers/userDBHelper')(mySqlConnection);
-const oAuthModel = require('./authorisation/accessTokenModel')(userDBHelper, accessTokenDBHelper);
-const oAuth2Server = require('node-oauth2-server');
-const express = require('express');
-const expressApp = express();
+const 
+  httpPort = 8080,
+  mySqlConnection = require('./databaseHelpers/mySqlWrapper'),
+  accessTokenDBHelper = require('./databaseHelpers/accessTokensDBHelper')(mySqlConnection),
+  userDBHelper = require('./databaseHelpers/userDBHelper')(mySqlConnection),
+  oAuthModel = require('./authorisation/accessTokenModel')(userDBHelper, accessTokenDBHelper),
+  oAuth2Server = require('node-oauth2-server'),
+  express = require('express'),
+  expressApp = express(),
+ 
+  restrictedAreaRoutesMethods = require('./restrictedArea/restrictedAreaRoutesMethods.js'),
+  restrictedAreaRoutes = require('./restrictedArea/restrictedAreaRoutes.js')(express.Router(), expressApp, restrictedAreaRoutesMethods),
+  authRoutesMethods = require('./authorisation/authRoutesMethods')(userDBHelper),
+  authRoutes = require('./authorisation/authRoutes')(express.Router(), expressApp, authRoutesMethods),
+  bodyParser = require('body-parser'),
+  cookieParser = require('cookie-parser'),
+  reqObj = require('request')
+  ;
+
 expressApp.oauth = oAuth2Server({
   model: oAuthModel,
   grants: ['password'],
   debug: true
 });
 
-const restrictedAreaRoutesMethods = require('./restrictedArea/restrictedAreaRoutesMethods.js');
-const restrictedAreaRoutes = require('./restrictedArea/restrictedAreaRoutes.js')(express.Router(), expressApp, restrictedAreaRoutesMethods);
-const authRoutesMethods = require('./authorisation/authRoutesMethods')(userDBHelper);
-const authRoutes = require('./authorisation/authRoutes')(express.Router(), expressApp, authRoutesMethods);
-const bodyParser = require('body-parser');
-const cookieParser = require('cookie-parser');
-const reqObj = require('request');
 //MARK: --- REQUIRE MODULES
 
 //MARK: --- INITIALISE MIDDLEWARE & ROUTES
@@ -92,6 +96,6 @@ expressApp.use('/', express.static('public'));
 //MARK: --- INITIALISE MIDDLEWARE & ROUTES
 
 //init the server
-expressApp.listen(port, () => {
-    console.log(`listening on port ${port}`);
+expressApp.listen(httpPort, () => {
+  console.log(`listening on port ${httpPort}`);
 });

@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "dependencies": {
+  "devDependencies": {
     "bluebird": "^3.5.0",
     "body-parser": "^1.17.2",
     "cookie-parser": "^1.4.3",
     "eslint": "^4.13.1",
+    "eslint-plugin-json": "^1.2.0",
     "express": "^4.16.2",
     "mysql": "^2.13.0",
     "node-oauth2-server": "^2.4.0",
@@ -17,6 +18,64 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
   },
-  "author": "Micah Simmons",
-  "license": "ISC"
+  "author": "Micah Simmons, Michael Mikowski",
+  "license": "ISC",
+  "eslintConfig": {
+    "extends": [
+      "eslint:recommended"
+    ],
+    "globals": {
+      "__dirname": true,
+      "__filename": true,
+      "$": true,
+      "clearTimeout": true,
+      "console": true,
+      "document": true,
+      "global": true,
+      "Image": true,
+      "localStorage": true,
+      "jQuery": true,
+      "module": true,
+      "process": true,
+      "Promise": true,
+      "require": true,
+      "setTimeout": true,
+      "window": true
+    },
+    "parserOptions": {
+      "ecmaVersion": 6
+    },
+    "plugins": [
+      "json"
+    ],
+    "rules": {
+      "continue": "off",
+      "indent": [
+        "error",
+        2
+      ],
+      "linebreak-style": [
+        "error",
+        "unix"
+      ],
+      "no-console": "off",
+      "no-plusplus": "off",
+      "one-var": [
+        "error",
+        {
+          "var": "always",
+          "let": "always",
+          "const": "always"
+        }
+      ],
+      "quotes": [
+        "error",
+        "single"
+      ],
+      "semi": [
+        "error",
+        "always"
+      ]
+    }
+  }
 }
