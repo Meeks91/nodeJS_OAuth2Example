@@ -73,8 +73,7 @@ expressApp.post('/login', function ( req, res ) {
   // https://developer.ibm.com/answers/questions/26698/unable-to-verify-\
   // leaf-signature-when-calling-rest-apis-from-node-js.html
   reqObj(
-    {
-      form   : body_map,
+    { form   : body_map,
       method : 'POST',
       url    : auth_url,
       rejectUnauthorized : false
@@ -91,18 +90,10 @@ expressApp.post('/login', function ( req, res ) {
       }
       else {
         resp_map  = JSON.parse( resp_body );
-        
         res.cookie( 'access_token', resp_map.access_token,
           { maxAge: 900000, httpOnly: true }
         );
-        console.warn( 'wtf?', query_map );
         res.redirect( 301, query_map.redirect_uri || '' );
-        // res.send(
-        //   '<html><head></head><body>'
-        //   + '<h1>Thank you for logging in</h1>'
-        //   + '<p>Token is ' + clientAppAccessToken + '</p>'
-        //   + '</body></html>'
-        // );
       }
     }
   );
