@@ -24,7 +24,7 @@ module.exports = injectedMySqlConnection => {
 function registerUserInDB(username, password, registrationCallback){
 
   //create query using the data in the req.body to register the user in the db
-  const registerUserQuery = `INSERT INTO users (username, user_password) VALUES ('${username}', SHA('${password}'))`
+  const registerUserQuery = `INSERT INTO user (username, user_password) VALUES ('${username}', SHA('${password}'))`
 
   //execute the query to register the user
   mySqlConnection.query(registerUserQuery, registrationCallback)
@@ -43,7 +43,7 @@ function registerUserInDB(username, password, registrationCallback){
 function getUserFromCrentials(username, password, callback) {
 
   //create query using the data in the req.body to register the user in the db
-  const getUserQuery = `SELECT * FROM users WHERE username = '${username}' AND user_password = SHA('${password}')`
+  const getUserQuery = `SELECT * FROM user WHERE username = '${username}' AND user_password = SHA('${password}')`
 
   console.log('getUserFromCrentials query is: ', getUserQuery);
 
@@ -70,7 +70,7 @@ function getUserFromCrentials(username, password, callback) {
 function doesUserExist(username, callback) {
 
   //create query to check if the user already exists
-  const doesUserExistQuery = `SELECT * FROM users WHERE username = '${username}'`
+  const doesUserExistQuery = `SELECT * FROM user WHERE username = '${username}'`
 
   //holds the results  from the query
   const sqlCallback = (dataResponseObject) => {
@@ -78,7 +78,7 @@ function doesUserExist(username, callback) {
       //calculate if user exists or assign null if results is null
       const doesUserExist = dataResponseObject.results !== null ? dataResponseObject.results.length > 0 ? true : false : null
 
-      //check if there are any users with this username and return the appropriate value
+      //check if there is a user with username and return
       callback(dataResponseObject.error, doesUserExist)
   }
 

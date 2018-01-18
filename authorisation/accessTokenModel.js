@@ -2,23 +2,15 @@ let userDBHelper
 let accessTokensDBHelper
 
 module.exports =  (injectedUserDBHelper, injectedAccessTokensDBHelper) => {
-
   userDBHelper = injectedUserDBHelper
-
   accessTokensDBHelper = injectedAccessTokensDBHelper
-
   return  {
-
     getClient: getClient,
-
     saveAccessToken: saveAccessToken,
-
     getUser: getUser,
-
     grantTypeAllowed: grantTypeAllowed,
-
     getAccessToken: getAccessToken
-    }
+  };
 }
 
 /* This method returns the client application which is attempting to get the accessToken.
@@ -34,15 +26,22 @@ we can just create an empty client with all null values.Because the client is a 
  - as opposed to a client we've retrieved through another operation - we just pass false for the error parameter
   as no errors can occur due to the aforemtioned hardcoding */
 function getClient(clientID, clientSecret, callback){
+  console.trace( 'getClient' );
 
-  const client = {
+// TODO: mmikowski - delete this
+// const client = {
+//   clientID,
+//   clientSecret,
+//   grants: null,
+//   redirectUris: null
+// }
+
+  callback( false, {
     clientID,
     clientSecret,
     grants: null,
     redirectUris: null
-  }
-
-  callback(false, client);
+  });
 }
 
 /* Determines whether or not the client which has to the specified clientID is permitted to use the specified grantType.
@@ -51,6 +50,7 @@ function getClient(clientID, clientSecret, callback){
   hence we return false for the error and as there is there are no clientIDs to check we can just return true to indicate
   the client has permission to use the grantType. */
 function grantTypeAllowed(clientID, grantType, callback) {
+  console.trace( 'grantTypeAllowed' );
 
   console.log('grantTypeAllowed called and clientID is: ', clientID, ' and grantType is: ', grantType);
 
@@ -83,7 +83,7 @@ function saveAccessToken(accessToken, clientID, expires, user, callback){
 /* This method is called when a user is using a bearerToken they've already got as authentication
    i.e. when they're calling APIs. The method effectively serves to validate the bearerToken. A bearerToken
    has been successfully validated if passing it to the getUserIDFromBearerToken() method returns a userID.
-   It's able to return a userID because each row in the access_tokens table has a userID in it so we can use
+   It's able to return a userID because each row in the access_token table has a userID in it so we can use
    the bearerToken to query for a row which will have a userID in it.
 
    The callback takes 2 parameters:
