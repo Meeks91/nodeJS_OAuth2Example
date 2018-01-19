@@ -5,12 +5,11 @@ module.exports = injectedMySqlConnection => {
   mySqlConnection = injectedMySqlConnection
 
   return {
-
-   registerUserInDB: registerUserInDB,
-   getUserFromCrentials: getUserFromCrentials,
-   doesUserExist: doesUserExist
+   registerUserInDB,
+   getUserFromCredentials,
+   doesUserExist
  }
-}
+};
 
 /**
  * attempts to register a user in the DB with the specified details.
@@ -40,12 +39,12 @@ function registerUserInDB(username, password, registrationCallback){
  * @param password
  * @param callback - takes an error and a user object
  */
-function getUserFromCrentials(username, password, callback) {
+function getUserFromCredentials(username, password, callback) {
 
   //create query using the data in the req.body to register the user in the db
   const getUserQuery = `SELECT * FROM user WHERE username = '${username}' AND user_password = SHA('${password}')`
 
-  console.log('getUserFromCrentials query is: ', getUserQuery);
+  console.log('getUserFromCredentials query is: ', getUserQuery);
 
   //execute the query to get the user
   mySqlConnection.query(getUserQuery, (dataResponseObject) => {

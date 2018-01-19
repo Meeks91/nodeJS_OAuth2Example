@@ -1,17 +1,16 @@
-let userDBHelper
-let accessTokensDBHelper
+let userDBHelper, accessTokensDBHelper;
 
 module.exports =  (injectedUserDBHelper, injectedAccessTokensDBHelper) => {
-  userDBHelper = injectedUserDBHelper
-  accessTokensDBHelper = injectedAccessTokensDBHelper
+  userDBHelper = injectedUserDBHelper;
+  accessTokensDBHelper = injectedAccessTokensDBHelper;
   return  {
-    getClient: getClient,
-    saveAccessToken: saveAccessToken,
-    getUser: getUser,
-    grantTypeAllowed: grantTypeAllowed,
-    getAccessToken: getAccessToken
+    getClient,
+    saveAccessToken,
+    getUser,
+    grantTypeAllowed,
+    getAccessToken
   };
-}
+};
 
 /* This method returns the client application which is attempting to get the accessToken.
  The client is normally be found using the  clientID & clientSecret. However, with user facing client applications such
@@ -26,16 +25,6 @@ we can just create an empty client with all null values.Because the client is a 
  - as opposed to a client we've retrieved through another operation - we just pass false for the error parameter
   as no errors can occur due to the aforemtioned hardcoding */
 function getClient(clientID, clientSecret, callback){
-  console.trace( 'getClient' );
-
-// TODO: mmikowski - delete this
-// const client = {
-//   clientID,
-//   clientSecret,
-//   grants: null,
-//   redirectUris: null
-// }
-
   callback( false, {
     clientID,
     clientSecret,
@@ -44,45 +33,59 @@ function getClient(clientID, clientSecret, callback){
   });
 }
 
-/* Determines whether or not the client which has to the specified clientID is permitted to use the specified grantType.
-  The callback takes an eror of type truthy, and a boolean which indcates whether the client that has the specified clientID
-  is permitted to use the specified grantType. As we're going to hardcode the response no error can occur
-  hence we return false for the error and as there is there are no clientIDs to check we can just return true to indicate
-  the client has permission to use the grantType. */
+/* Determines whether or not the client which has to the specified clientID
+ * is permitted to use the specified grantType. The callback takes an error of
+ * type truthy, and a boolean which indcates whether the client that has the
+ * specified clientID is permitted to use the specified grantType. As we're
+ * going to hardcode the response no error can occur hence we return false
+ * for the error and as there is there are no clientIDs to check we can just
+ * return true to indicate
+ * the client has permission to use the grantType.
+*/
 function grantTypeAllowed(clientID, grantType, callback) {
-  console.trace( 'grantTypeAllowed' );
-
-  console.log('grantTypeAllowed called and clientID is: ', clientID, ' and grantType is: ', grantType);
-
-  callback(false, true);
+  console.log('grantTypeAllowed called and clientID is: ', clientID,
+    ' and grantType is: ', grantType
+  );
+  callback( false, true );
 }
 
-
-/* The method attempts to find a user with the spcecified username and password. The callback takes 2 parameters.
-   This first parameter is an error of type truthy, and the second is a user object. You can decide the structure of
-   the user object as you will be the one accessing the data in the user object in the saveAccessToken() method. The library
-   doesn't access the user object it just supplies it to the saveAccessToken() method */
+/* The method attempts to find a user with the specified username and
+ * password. The callback takes 2 parameters. This first parameter is an
+ * error of type truthy, and the second is a user object. You can decide
+ * the structure of the user object as you will be the one accessing the
+ * data in the user object in the saveAccessToken() method. The library
+ * doesn't access the user object it just supplies it to the
+ * saveAccessToken() method
+*/
 function getUser(username, password, callback){
+  console.log('getUser() called and username is: ', username,
+    ' and password is: ', password, ' and callback is: ', callback,
+    ' and is userDBHelper is: ', userDBHelper
+  );
 
-  console.log('getUser() called and username is: ', username, ' and password is: ', password, ' and callback is: ', callback, ' and is userDBHelper null is: ', userDBHelper);
-
-  //try and get the user using the user's credentials
-  userDBHelper.getUserFromCrentials(username, password, callback)
+  // Get the user using credentials
+  userDBHelper.getUserFromCredentials(username, password, callback)
 }
 
-/* saves the accessToken along with the userID retrieved the specified user */
-function saveAccessToken(accessToken, clientID, expires, user, callback){
-
+// Save accessToken userID retrieved the specified user */
+function saveAccessToken( accessToken, clientID, expires, user, callback ) {
   console.log('saveAccessToken() called and accessToken is: ', accessToken,
-  ' and clientID is: ',clientID, ' and user is: ', user, ' and accessTokensDBhelper is: ', accessTokensDBHelper)
+    ' and clientID is: ',clientID, ' and user is: ', user,
+    ' and accessTokensDBhelper is: ', accessTokensDBHelper,
+    ' and callback is ', callback
+  );
 
-    //save the accessToken along with the user.id
-    accessTokensDBHelper.saveAccessToken(accessToken, user.user_id, callback)
+  // Save the accessToken along with the user.id
+  accessTokensDBHelper.createSession( accessToken,
+
+  );
+  accessTokensDBHelper.storeAccessToken(accessToken, user.user_id, callback );
 }
 
 /* This method is called when a user is using a bearerToken they've already got as authentication
    i.e. when they're calling APIs. The method effectively serves to validate the bearerToken. A bearerToken
-   has been successfully validated if passing it to the getUserIDFromBearerToken() method returns a userID.
+   has been successfully validated if passing it to the
+   getUserIdFromAccessToken method returns a userID.
    It's able to return a userID because each row in the access_token table has a userID in it so we can use
    the bearerToken to query for a row which will have a userID in it.
 
@@ -96,19 +99,18 @@ function saveAccessToken(accessToken, clientID, expires, user, callback){
   If you create a userId you can access it in authenticated endpoints in the req.user.id object.
  */
 function getAccessToken(bearerToken, callback) {
-
-  //try and get the userID from the db using the bearerToken
-  accessTokensDBHelper.getUserIDFromBearerToken(bearerToken, (userID) => {
-
+  // Get the userID from the db using the bearerToken
+  accessTokensDBHelper.getUserIdFromAccessToken(bearerToken, (errorData, userID) => {
     //create the token using the retrieved userID
-    const accessToken = {
-      user: {
-        id: userID,
-      },
-      expires: null
+    if ( userID ) {
+      callback( false, 
+        { user: { id: userID },  
+          expires : null
+        }
+      );
     }
-
-    //set the error to true if userID is null, and pass in the token if there is a userID else pass null
-    callback(userID == null ? true : false, userID == null ? null : accessToken)
-  })
+    else {
+      callback( 'Error getting access token', null );
+    }
+  });
 }

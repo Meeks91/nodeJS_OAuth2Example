@@ -1,37 +1,35 @@
 //MARK: --- REQUIRE MODULES
 
 const
-  portInt = 3000,
-  mySqlConnection = require('./databaseHelpers/mySqlWrapper'),
-  accessTokenDBHelper = require('./databaseHelpers/accessTokensDBHelper')(mySqlConnection),
-  userDBHelper = require('./databaseHelpers/userDBHelper')(mySqlConnection),
-  oAuthModel = require('./authorisation/accessTokenModel')(userDBHelper, accessTokenDBHelper),
-  oAuth2Server = require('node-oauth2-server'),
-  expressObj = require('express'),
-  expressApp = expressObj(),
   bodyParser = require('body-parser'),
   cookieParser = require('cookie-parser'),
-  reqObj = require('request')
+  expressObj = require('express'),
+  mySqlConnection = require('./databaseHelpers/mySqlWrapper'),
+  oAuth2Server = require('node-oauth2-server'),
+  reqObj = require('request'),
+
+  expressApp = expressObj(),
+  accessTokenDBHelper
+    = require('./databaseHelpers/accessTokensDBHelper')(mySqlConnection),
+  userDBHelper = require('./databaseHelpers/userDBHelper')(mySqlConnection),
+  oAuthModel = require('./authorisation/accessTokenModel')(
+    userDBHelper, accessTokenDBHelper
+  ),
+  portInt = 3000
   ;
 
-function noCacheFn( req, res, next) {
-  res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+function noCacheFn( req, res, nextFn ) {
+  res.header('Cache-Control',
+    'private, no-cache, no-store, must-revalidate'
+  );
   res.header('Expires', '-1');
   res.header('Pragma', 'no-cache');
-  next();
+  nextFn();
 }
 
 // First bite of the apple?
 expressApp.use(noCacheFn);
 expressApp.use(bodyParser.urlencoded({ extended: true }));
-// expressApp.use(function ( req, res, next ) {
-//   if ( typeof req.body === 'object' ) {
-//     req.body.client_id = 'application';
-//     req.body.client_secret = 'secret';
-//     next();
-//   }
-// });
-
 expressApp.oauth = oAuth2Server({
   model: oAuthModel,
   grants: ['password'],
@@ -46,11 +44,11 @@ let
   authRoutesMethods = require('./authorisation/authRoutesMethods')(userDBHelper),
   authRoutes = require('./authorisation/authRoutes')(expressObj.Router(), expressApp, authRoutesMethods)
   ;
-
 //MARK: --- REQUIRE MODULES
 
 //MARK: --- INITIALISE MIDDLEWARE & ROUTES
 // Set the authRoutes for registration and & login requests
+expressApp.use(cookieParser());
 expressApp.use('/auth', authRoutes);
 
 // Set up graphical login page
@@ -79,7 +77,6 @@ expressApp.post('/login', function ( req, res ) {
       rejectUnauthorized : false
     },
     function ( error_data, resp_obj, resp_body ) {
-      var resp_map;
       if ( error_data || resp_obj.statusCode !== 200  ) {
         res.send(
           '<html><head></head><body>'
@@ -89,7 +86,7 @@ expressApp.post('/login', function ( req, res ) {
         );
       }
       else {
-        resp_map  = JSON.parse( resp_body );
+        let resp_map  = JSON.parse( resp_body );
         res.cookie( 'access_token', resp_map.access_token,
           { maxAge: 900000, httpOnly: true }
         );
@@ -98,18 +95,28 @@ expressApp.post('/login', function ( req, res ) {
     }
   );
 });
-expressApp.use(cookieParser());
-expressApp.use(function ( req, res, next ) {
-  var cookie_obj = req.cookies.access_token;
-  if ( ! cookie_obj ) {
-    console.log( 'no access_token cookie found!' );
-    res.redirect( 301, '/login?redirect_uri=' + encodeURIComponent(
+expressApp.use(function ( req, res, nextFn ) {
+  const
+    cookie_str = req.cookies.access_token,
+    redirect_str = '/login?redirect_uri=' + encodeURIComponent(
       req.protocol + '://' + req.get( 'Host' ) + req.originalUrl
-    ));
+    );
+
+  if ( ! cookie_str ) {
+    console.log( 'No access_token cookie found!' );
+    res.redirect( 301, redirect_str );
   }
   else {
-    console.log( 'cookie found: ', cookie_obj );
-    next();
+    accessTokenDBHelper.getSession( cookie_str,
+      function ( error_data, session_row ) {
+      if ( error_data || ! session_row ) {
+        console.log( 'access_token cookie invalid', error_data, session_row );
+        res.redirect( 301, redirect_str );
+      }
+      else {
+        nextFn();
+      }
+    });
   }
 });
 
@@ -137,4 +144,3 @@ expressApp.listen( portInt, () => {
 // https.createServer(optionMap, expressApp).listen(portInt, function () {
 //   console.log(`SSL listening on port ${portInt}`);
 // });
-

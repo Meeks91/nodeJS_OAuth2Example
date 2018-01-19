@@ -1,12 +1,10 @@
 const 
   mySql = require('mysql'),
-  connectMap = require('../config/credentials.js' )
-
-let mysqlConnectObj //object which holds the connection to the db
+  connectMap = require('../config/credentials.js' );
 
 // Create the connection to the db
-function initConnection() {
-   mysqlConnectObj = mySql.createConnection( connectMap );
+function makeConnectObj() {
+   return mySql.createConnection( connectMap );
 }
 
 /**
@@ -17,18 +15,16 @@ function initConnection() {
  * @param callback - takes a DataResponseObject
  */
 function query(queryString, callback){
-
   // Init the connection object. Needs to be done everytime as we call end()
   //  on the connection after the call is complete
-  initConnection()
+  let mysqlConnectObj = makeConnectObj();
 
   // Connect to the db
-  mysqlConnectObj.connect()
+  mysqlConnectObj.connect();
 
   // Execute the query and collect the results in the callback
-  mysqlConnectObj.query(queryString, function(error, results, fields){
-
-      console.log('mySql: query: error is: ', error, ' and results are: ', results);
+  mysqlConnectObj.query(queryString, function ( error, results, fields ) {
+    console.log('mySql: query: error is: ', error, ' and results are: ', results);
 
     // Disconnect from db
     mysqlConnectObj.end();
@@ -54,4 +50,4 @@ function createDataResponseObject(error, results) {
      }
   }
 
-module.exports = { query: query }
+module.exports = { query: query };
