@@ -13,7 +13,7 @@ const
     mySqlConnection ),
   userDBHelper        = require( './databaseHelpers/userDBHelper' )(
     mySqlConnection ),
-  oa2ModelObj         = require( './authorisation/accessTokenModel' )(
+  oa2ModelObj         = require( './authorize/accessTokenModel' )(
     userDBHelper, accessTokenDBHelper
   ),
   expressApp  = expressFn(),
@@ -62,13 +62,12 @@ restrictedAreaRoutesMethods = require(
 restrictedAreaRoutes = require(
   './restrictedArea/restrictedAreaRoutes.js'
 )( expressFn.Router(), expressApp, restrictedAreaRoutesMethods );
-authRoutesMethods = require( './authorisation/authRoutesMethods')(
-  userDBHelper
+authRoutesMethods = require( './authorize/authRoutesMethods')(
+  userDBHelper, accessTokenDBHelper
 );
-authRoutes = require( './authorisation/authRoutes' )(
+authRoutes = require( './authorize/authRoutes' )(
   expressFn.Router(), expressApp, authRoutesMethods
 );
-//MARK: --- REQUIRE MODULES
 
 //MARK: --- INITIALISE MIDDLEWARE & ROUTES
 // Set the authRoutes for registration and & login requests
@@ -135,7 +134,7 @@ expressApp.use(function ( req, res, nextFn ) {
       cookie_str,
       function ( error_data, session_row ) {
         if ( error_data || ! session_row ) {
-          console.log( 'access_token cookie invalid', error_data, session_row );
+          res.clearCookie( 'access_token' );
           res.redirect( 301, redirect_str );
         }
         else {
@@ -146,10 +145,11 @@ expressApp.use(function ( req, res, nextFn ) {
   }
 });
 
-// Set the restrictedAreaRoutes used to demo the accesiblity or routes that ar OAuth2 protected
+// Set the restrictedAreaRoutes used to demo routes that are OAuth2 protected
 expressApp.use('/restrictedArea', restrictedAreaRoutes);
 // Set the bodyParser to parse the urlencoded post data
 expressApp.use('/', expressFn.static('./public'));
+// . END configure middleware and routes ====================================
 
 // Initialize server
 expressApp.listen( portInt, () => {

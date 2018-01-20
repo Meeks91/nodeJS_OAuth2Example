@@ -7,7 +7,7 @@ const
   mySqlConnection = require('./databaseHelpers/mySqlWrapper'),
   accessTokenDBHelper = require('./databaseHelpers/accessTokensDBHelper')(mySqlConnection),
   userDBHelper = require('./databaseHelpers/userDBHelper')(mySqlConnection),
-  oAuthModel = require('./authorisation/accessTokenModel')(userDBHelper, accessTokenDBHelper),
+  oAuthModel = require('./authorize/accessTokenModel')(userDBHelper, accessTokenDBHelper),
   oAuth2Server = require('node-oauth2-server'),
   express = require('express'),
   exprApp = express(),
@@ -29,8 +29,8 @@ exprApp.oauth = oAuth2Server({
 var
   restrictedAreaRoutesMethods = require('./restrictedArea/restrictedAreaRoutesMethods.js'),
   restrictedAreaRoutes = require('./restrictedArea/restrictedAreaRoutes.js')(express.Router(), exprApp, restrictedAreaRoutesMethods),
-  authRoutesMethods = require('./authorisation/authRoutesMethods')(userDBHelper),
-  authRoutes = require('./authorisation/authRoutes')(express.Router(), exprApp, authRoutesMethods),
+  authRoutesMethods = require('./authorize/authRoutesMethods')(userDBHelper),
+  authRoutes = require('./authorize/authRoutes')(express.Router(), exprApp, authRoutesMethods),
 
   authServerAccessToken = null,
   clientAppAccessToken  = null

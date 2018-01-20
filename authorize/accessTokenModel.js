@@ -1,17 +1,5 @@
 let userDBHelper, accessTokensDBHelper;
 
-module.exports =  (injectedUserDBHelper, injectedAccessTokensDBHelper) => {
-  userDBHelper = injectedUserDBHelper;
-  accessTokensDBHelper = injectedAccessTokensDBHelper;
-  return  {
-    getClient,
-    saveAccessToken,
-    getUser,
-    grantTypeAllowed,
-    getAccessToken
-  };
-};
-
 /* This method returns the client application which is attempting to get the
  accessToken.  The client is normally be found using the clientID and
  clientSecret. However, with user facing client applications such as mobile
@@ -63,7 +51,7 @@ function grantTypeAllowed(clientID, grantType, callback) {
  * doesn't access the user object it just supplies it to the
  * saveAccessToken() method
 */
-function getUser(username, password, callback){
+function getUser( username, password, callback ){
   console.log('getUser() called and username is: ', username,
     ' and password is: ', password, ' and callback is: ', callback,
     ' and is userDBHelper is: ', userDBHelper
@@ -126,3 +114,44 @@ function getAccessToken(bearerToken, callback) {
     }
   );
 }
+
+/*
+ Support client_credentials grant type
+ */
+function getUserFromClient (clientId, clientSecret, callback) {
+  const clients = config.confidentialClients.filter(function(client) {
+    return client.clientId === clientId && client.clientSecret === clientSecret;
+  });
+  let user;
+  if (clients.length) {
+    user = {
+      username: clientId
+    };
+  }
+  callback(false, user);
+}
+
+/*
+  support access_token flow
+ */
+function saveAuthorizationCode () {
+  console.warn( 'saveAuthorizationCode >>>>', arguments );
+}
+
+function mainFn ( injectedUserDBHelper, injectedAccessTokensDBHelper ) {
+  userDBHelper         = injectedUserDBHelper;
+  accessTokensDBHelper = injectedAccessTokensDBHelper;
+  return  {
+    getAccessToken,
+    getClient,
+    getUser,
+    getUserFromClient,
+    grantTypeAllowed,
+    saveAccessToken,
+    saveAuthorizationCode
+  };
+}
+
+module.exports = mainFn;
+
+

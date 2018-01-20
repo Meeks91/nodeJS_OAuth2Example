@@ -8,8 +8,8 @@ function clearUserSessions( userId, callback ) {
 
   if ( !userId ) { callback( null ); }
   else {
-    mySqlConnection.query( clearQuery, ( dataResponseObject ) => {
-      callback( null, dataResponseObject.results );
+    mySqlConnection.query( clearQuery, ( response_map ) => {
+      callback( null, response_map.results );
     } );
   }
 }
@@ -19,9 +19,9 @@ function cleanAccessTokenByUserId ( userId, callback ) {
     + `WHERE user_id = '${userId}' ORDER BY access_token_id DESC LIMIT 1;`
   ;
 
-  mySqlConnection.query( selectQuery, function ( dataResponseObject ) {
+  mySqlConnection.query( selectQuery, function ( response_map ) {
     const
-      result_list   = dataResponseObject.results,
+      result_list   = response_map.results,
       result_map    = result_list && result_list[ 0 ],
       last_token_id = result_map.access_token_id
     ;
@@ -33,8 +33,8 @@ function cleanAccessTokenByUserId ( userId, callback ) {
       const cleanQuery = `DELETE FROM access_token where user_id = '${userId}' `
         + `AND access_token_id != ${last_token_id}`;
 
-      mySqlConnection.query( cleanQuery, function ( dataResponseObject ) {
-        callback( dataResponseObject.error );
+      mySqlConnection.query( cleanQuery, function ( response_map ) {
+        callback( response_map.error );
       } );
     }
   } );
@@ -45,9 +45,9 @@ function createSession ( accessToken, callback ) {
     + `VALUES ( '${accessToken}' ) `
     + `ON DUPLICATE KEY UPDATE session_hash='${accessToken}';`
   ;
-  mySqlConnection.query( createQuery, ( dataResponseObject ) => {
+  mySqlConnection.query( createQuery, ( response_map ) => {
     const
-      result_list = dataResponseObject.results,
+      result_list = response_map.results,
       result_map  = result_list && result_list[ 0 ],
       error_msg   = result_map ? null : 'No session found'
     ;
@@ -70,11 +70,11 @@ function getUserIdFromAccessToken ( accessToken, callback ) {
     + `WHERE access_token = '${accessToken}';`;
 
   // Execute the query to get the userID
-  mySqlConnection.query( getUserQuery, ( dataResponseObject ) => {
+  mySqlConnection.query( getUserQuery, ( response_map ) => {
     // Get the user_id from the results ( or null ) and use for callback
-    const user_id = dataResponseObject.results
-    && dataResponseObject.results.length == 1
-      ? dataResponseObject.results[ 0 ].user_id : null;
+    const user_id = response_map.results
+    && response_map.results.length == 1
+      ? response_map.results[ 0 ].user_id : null;
     callback( null, user_id );
   } );
 }
@@ -87,15 +87,16 @@ function getSession ( accessToken, callback ) {
     + 'WHERE a.access_token = s.session_hash '
     + `AND s.session_hash='${accessToken}';`;
 
-  console.warn( 'session query is ' + sessionQuery );
+  console.warn( 'getSession query is ' + sessionQuery );
   // Execute the query to get response row
-  mySqlConnection.query( sessionQuery, ( dataResponseObject ) => {
+  mySqlConnection.query( sessionQuery, ( response_map ) => {
     const
       floor_int   = Math.floor( Date.now() / 1000 ) - expiryInt,
-      result_list = dataResponseObject.results,
+      result_list = response_map.results,
       result_map  = result_list && result_list[ 0 ]
       ;
 
+    console.warn( 'getSession response', response_map );
     if ( result_map ) {
       if ( result_map.touch_time_int < floor_int ) {
         clearUserSessions( result_map.user_id, function () {
@@ -125,12 +126,12 @@ function storeAccessToken ( accessToken, userId, callback ) {
     + ' ON DUPLICATE KEY UPDATE'
     + ` access_token = '${accessToken}';`;
 
-  mySqlConnection.query( saveTokenQuery, ( dataResponseObject ) => {
-    if ( dataResponseObject.error ) {
-      callback( dataResponseObject.error );
+  mySqlConnection.query( saveTokenQuery, ( response_map ) => {
+    if ( response_map.error ) {
+      callback( response_map.error );
     }
     else {
-      console.warn( 'Access Token stored', dataResponseObject.results );
+      console.warn( 'Access Token stored', response_map.results );
       cleanAccessTokenByUserId( userId, callback );
     }
   } );

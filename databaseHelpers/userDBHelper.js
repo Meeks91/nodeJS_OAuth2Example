@@ -40,17 +40,21 @@ function registerUserInDB(username, password, registrationCallback){
  * @param callback - takes an error and a user object
  */
 function getUserFromCredentials(username, password, callback) {
-
-  //create query using the data in the req.body to register the user in the db
-  const getUserQuery = `SELECT * FROM user WHERE username = '${username}' AND user_password = SHA('${password}')`
-
+  const getUserQuery = 'SELECT u.user_id AS user_id, '
+    + 'u.username AS username, a.access_token AS access_token '
+    + 'FROM user AS u, access_token AS a '
+    + `WHERE username = '${username}' `
+    + `AND user_password = SHA('${password}') `
+    + `AND u.user_id = a.user_id`
+    ;
   console.log('getUserFromCredentials query is: ', getUserQuery);
-
-  //execute the query to get the user
-  mySqlConnection.query(getUserQuery, (dataResponseObject) => {
-
-      //pass in the error which may be null and pass the results object which we get the user from if it is not null
-      callback(false, dataResponseObject.results !== null && dataResponseObject.results.length  === 1 ?  dataResponseObject.results[0] : null)
+  mySqlConnection.query(getUserQuery, function ( result_map ) {
+    callback(
+      false,
+      result_map.results !== null
+      && result_map.results.length  === 1
+        ? result_map.results[0] : null
+    )
   })
 }
 
