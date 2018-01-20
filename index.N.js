@@ -1,23 +1,39 @@
-//MARK: --- REQUIRE MODULES
-
+// BEGIN Require modules and general config =================================
 const
-  bodyParser = require('body-parser'),
-  cookieParser = require('cookie-parser'),
-  expressObj = require('express'),
-  mySqlConnection = require('./databaseHelpers/mySqlWrapper'),
-  oAuth2Server = require('node-oauth2-server'),
-  reqObj = require('request'),
+  bodyParser   = require( 'body-parser'        ),
+  cookieParser = require( 'cookie-parser'      ),
+  expressFn    = require( 'express'            ),
+  morganFn     = require( 'morgan'             ),
+  oa2ServerFn  = require( 'node-oauth2-server' ),
+  requestObj   = require( 'request'            ),
+  //utilObj    = require( 'util'               ),
 
-  expressApp = expressObj(),
-  accessTokenDBHelper
-    = require('./databaseHelpers/accessTokensDBHelper')(mySqlConnection),
-  userDBHelper = require('./databaseHelpers/userDBHelper')(mySqlConnection),
-  oAuthModel = require('./authorisation/accessTokenModel')(
+  mySqlConnection     = require( './databaseHelpers/mySqlWrapper' ),
+  accessTokenDBHelper = require( './databaseHelpers/accessTokensDBHelper' )(
+    mySqlConnection ),
+  userDBHelper        = require( './databaseHelpers/userDBHelper' )(
+    mySqlConnection ),
+  oa2ModelObj         = require( './authorisation/accessTokenModel' )(
     userDBHelper, accessTokenDBHelper
   ),
-  portInt = 3000
+  expressApp  = expressFn(),
+  portInt     = 3000
   ;
 
+let
+  restrictedAreaRoutesMethods, restrictedAreaRoutes,
+  authRoutesMethods, authRoutes
+  ;
+
+  // expressApp       = expressFn(),
+  // fauxAccessToken  = 'xyzpdqEh?',
+  // fauxAuthCode     = 'b06u5_c0d3',
+  // fauxRefreshToken = '13e07ee4-6fc3-4803-b038-f1f3de2927d7',
+  // notifyUrl        = 'https://notification.dev.aisera.com',
+  // ao2Model         = require('./model'),
+// . END Require modules and general config =================================
+
+// BEGIN utility methods ====================================================
 function noCacheFn( req, res, nextFn ) {
   res.header('Cache-Control',
     'private, no-cache, no-store, must-revalidate'
@@ -26,37 +42,44 @@ function noCacheFn( req, res, nextFn ) {
   res.header('Pragma', 'no-cache');
   nextFn();
 }
+// . END Utility methods ====================================================
 
-// First bite of the apple?
-expressApp.use(noCacheFn);
-expressApp.use(bodyParser.urlencoded({ extended: true }));
-expressApp.oauth = oAuth2Server({
-  model: oAuthModel,
+// BEGIN configure middleware and routes ====================================
+expressApp.use( morganFn( 'dev') );
+expressApp.use( bodyParser.urlencoded({ extended: true }) );
+expressApp.use( cookieParser() );
+expressApp.oauth = oa2ServerFn({
+  model: oa2ModelObj,
   grants: ['password'],
   debug: true
 });
-// Set the oAuth errorHandler
-expressApp.use(expressApp.oauth.errorHandler());
 
-let
-  restrictedAreaRoutesMethods = require('./restrictedArea/restrictedAreaRoutesMethods.js'),
-  restrictedAreaRoutes = require('./restrictedArea/restrictedAreaRoutes.js')(expressObj.Router(), expressApp, restrictedAreaRoutesMethods),
-  authRoutesMethods = require('./authorisation/authRoutesMethods')(userDBHelper),
-  authRoutes = require('./authorisation/authRoutes')(expressObj.Router(), expressApp, authRoutesMethods)
-  ;
+// configure oAuth
+expressApp.use(expressApp.oauth.errorHandler());
+restrictedAreaRoutesMethods = require(
+  './restrictedArea/restrictedAreaRoutesMethods.js'
+);
+restrictedAreaRoutes = require(
+  './restrictedArea/restrictedAreaRoutes.js'
+)( expressFn.Router(), expressApp, restrictedAreaRoutesMethods );
+authRoutesMethods = require( './authorisation/authRoutesMethods')(
+  userDBHelper
+);
+authRoutes = require( './authorisation/authRoutes' )(
+  expressFn.Router(), expressApp, authRoutesMethods
+);
 //MARK: --- REQUIRE MODULES
 
 //MARK: --- INITIALISE MIDDLEWARE & ROUTES
 // Set the authRoutes for registration and & login requests
-expressApp.use(cookieParser());
-expressApp.use('/auth', authRoutes);
+expressApp.use('/auth', noCacheFn, authRoutes);
 
 // Set up graphical login page
 expressApp.get( '/login', function ( req, res, next ) {
   res.sendFile( __dirname + '/views/login.html');
 });
 expressApp.post('/login', function ( req, res ) {
-  var
+  const
     query_map = req.query,
     body_map  = req.body,
     auth_url  = req.protocol + '://' + req.headers.host + '/auth/login'
@@ -70,7 +93,7 @@ expressApp.post('/login', function ( req, res ) {
   // The rejectUnauthorized solves UNABLE_TO_VERIFY_LEAF_SIGNATURE SSL issue:
   // https://developer.ibm.com/answers/questions/26698/unable-to-verify-\
   // leaf-signature-when-calling-rest-apis-from-node-js.html
-  reqObj(
+  requestObj(
     { form   : body_map,
       method : 'POST',
       url    : auth_url,
@@ -95,6 +118,7 @@ expressApp.post('/login', function ( req, res ) {
     }
   );
 });
+
 expressApp.use(function ( req, res, nextFn ) {
   const
     cookie_str = req.cookies.access_token,
@@ -107,26 +131,27 @@ expressApp.use(function ( req, res, nextFn ) {
     res.redirect( 301, redirect_str );
   }
   else {
-    accessTokenDBHelper.getSession( cookie_str,
+    accessTokenDBHelper.getSession(
+      cookie_str,
       function ( error_data, session_row ) {
-      if ( error_data || ! session_row ) {
-        console.log( 'access_token cookie invalid', error_data, session_row );
-        res.redirect( 301, redirect_str );
+        if ( error_data || ! session_row ) {
+          console.log( 'access_token cookie invalid', error_data, session_row );
+          res.redirect( 301, redirect_str );
+        }
+        else {
+          nextFn();
+        }
       }
-      else {
-        nextFn();
-      }
-    });
+    );
   }
 });
 
 // Set the restrictedAreaRoutes used to demo the accesiblity or routes that ar OAuth2 protected
 expressApp.use('/restrictedArea', restrictedAreaRoutes);
 // Set the bodyParser to parse the urlencoded post data
-expressApp.use('/', expressObj.static('./public'));
+expressApp.use('/', expressFn.static('./public'));
 
-// MARK: --- INITIALISE MIDDLEWARE & ROUTES
-
+// Initialize server
 expressApp.listen( portInt, () => {
   console.log( 'HTTP Listening on port ' + portInt );
 });

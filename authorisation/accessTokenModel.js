@@ -12,18 +12,24 @@ module.exports =  (injectedUserDBHelper, injectedAccessTokensDBHelper) => {
   };
 };
 
-/* This method returns the client application which is attempting to get the accessToken.
- The client is normally be found using the  clientID & clientSecret. However, with user facing client applications such
- as mobile apps or websites which use the password grantType we don't use the clientID or clientSecret in the authentication flow.
- Therefore, although the client  object is required by the library all of the client's fields can be  be null. This also
-includes the grants field. Note that we did, however, specify that we're using the password grantType when we made the
-oAuth object in the index.js file.
+/* This method returns the client application which is attempting to get the
+ accessToken.  The client is normally be found using the clientID and
+ clientSecret. However, with user facing client applications such as mobile
+ apps or websites which use the password grantType we don't use the clientID
+ or clientSecret in the authentication flow.  Therefore, although the client
+ object is required by the library all of the client's fields can be  be null.
+ This also includes the grants field. Note that we did, however, specify that
+ we're using the password grantType when we made the oAuth object in the
+ index.js file.
 
-The callback takes 2 parameters. The first parameter is an error of type falsey and the second is a client object.
-As we're not of retrieving the client using the clientID and clientSecret (as we're using the password grantType)
-we can just create an empty client with all null values.Because the client is a hardcoded object
- - as opposed to a client we've retrieved through another operation - we just pass false for the error parameter
-  as no errors can occur due to the aforemtioned hardcoding */
+ The callback takes 2 parameters. The first parameter is an error of type
+ falsey and the second is a client object.  As we're not of retrieving the
+ client using the clientID and clientSecret (as we're using the password
+ grantType) we can just create an empty client with all null values.Because
+ the client is a hardcoded object - as opposed to a client we've retrieved
+ through another operation - we just pass false for the error parameter as no
+ errors can occur due to the aforemtioned hardcoding
+*/
 function getClient(clientID, clientSecret, callback){
   callback( false, {
     clientID,
@@ -82,35 +88,41 @@ function saveAccessToken( accessToken, clientID, expires, user, callback ) {
   accessTokensDBHelper.storeAccessToken(accessToken, user.user_id, callback );
 }
 
-/* This method is called when a user is using a bearerToken they've already got as authentication
-   i.e. when they're calling APIs. The method effectively serves to validate the bearerToken. A bearerToken
-   has been successfully validated if passing it to the
-   getUserIdFromAccessToken method returns a userID.
-   It's able to return a userID because each row in the access_token table has a userID in it so we can use
-   the bearerToken to query for a row which will have a userID in it.
+/* This method is called when a user is using a bearerToken they've already
+ * got as authentication
+   i.e. when they're calling APIs. The method effectively serves to validate
+   the bearerToken. A bearerToken has been successfully validated if passing
+   it to the getUserIdFromAccessToken method returns a userID.  It's able to
+   return a userID because each row in the access_token table has a userID in
+   it so we can use the bearerToken to query for a row which will have a
+   userID in it.
 
-   The callback takes 2 parameters:
-   1. A truthy boolean indicating whether or not an error has occured. It should be set to a truthy if
-   there is an error or a falsy if there is no error
-   2. An accessToken which contains an expiration date, you can assign null to ensure the token doesnin't expire.
-  Then either a user object, or a userId which is a string or a number.
+   The callback takes 2 parameters: 1. A truthy boolean indicating whether or
+   not an error has occured. It should be set to a truthy if there is an error
+   or a falsy if there is no error 2. An accessToken which contains an
+   expiration date, you can assign null to ensure the token doesnin't expire.
+   Then either a user object, or a userId which is a string or a number.
 
-  If you create a user object you can access it in authenticated endpoints in the req.user object.
-  If you create a userId you can access it in authenticated endpoints in the req.user.id object.
+  If you create a user object you can access it in authenticated endpoints in
+  the req.user object.  If you create a userId you can access it in
+  authenticated endpoints in the req.user.id object.
  */
 function getAccessToken(bearerToken, callback) {
   // Get the userID from the db using the bearerToken
-  accessTokensDBHelper.getUserIdFromAccessToken(bearerToken, (errorData, userID) => {
-    //create the token using the retrieved userID
-    if ( userID ) {
-      callback( false, 
-        { user: { id: userID },  
-          expires : null
-        }
-      );
+  accessTokensDBHelper.getUserIdFromAccessToken(
+    bearerToken,
+    // Callback to create the token using the retrieved userID
+    function ( errorData, userID ) {
+      if ( userID ) {
+        callback( false, 
+          { user: { id: userID },  
+            expires : null
+          }
+        );
+      }
+      else {
+        callback( 'Error getting access token', null );
+      }
     }
-    else {
-      callback( 'Error getting access token', null );
-    }
-  });
+  );
 }

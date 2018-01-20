@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "devDependencies": {
+  "dependencies": {
     "bluebird": "^3.5.0",
     "body-parser": "^1.17.2",
     "cookie-parser": "^1.4.3",
     "eslint": "^4.13.1",
     "eslint-plugin-json": "^1.2.0",
     "express": "^4.16.2",
+    "express-oauth-server": "^2.0.0",
     "mysql": "^2.13.0",
     "node-oauth2-server": "^2.4.0",
     "request": "^2.83.0"
@@ -77,5 +78,8 @@
         "always"
       ]
     }
+  },
+  "devDependencies": {
+    "morgan": "^1.9.0"
   }
 }
