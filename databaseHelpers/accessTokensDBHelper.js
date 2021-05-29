@@ -1,54 +1,154 @@
-let mySqlConnection
+const expiryInt  = 60; // 1 minute expiry for testing
 
-module.exports = injectedMySqlConnection => {
+function clearUserSessions( userId, callback ) {
+  const clearQuery = 'DELETE FROM session '
+    + 'WHERE UNIX_TIMESTAMP( NOW() - 120 ) '
+    + '> UNIX_TIMESTAMP( touch_time );'
+    ;
 
-  mySqlConnection = injectedMySqlConnection
+  if ( !userId ) { callback( null ); }
+  else {
+    mySqlConnection.query( clearQuery, ( response_map ) => {
+      callback( null, response_map.results );
+    } );
+  }
+}
 
-  return {
-   saveAccessToken: saveAccessToken,
-   getUserIDFromBearerToken: getUserIDFromBearerToken
- }
+function cleanAccessTokenByUserId ( userId, callback ) {
+  const selectQuery = 'SELECT access_token_id FROM access_token '
+    + `WHERE user_id = '${userId}' ORDER BY access_token_id DESC LIMIT 1;`
+  ;
+
+  mySqlConnection.query( selectQuery, function ( response_map ) {
+    const
+      result_list   = response_map.results,
+      result_map    = result_list && result_list[ 0 ],
+      last_token_id = result_map.access_token_id
+    ;
+
+    if ( !last_token_id ) {
+      callback();
+    }
+    else {
+      const cleanQuery = `DELETE FROM access_token where user_id = '${userId}' `
+        + `AND access_token_id != ${last_token_id}`;
+
+      mySqlConnection.query( cleanQuery, function ( response_map ) {
+        callback( response_map.error );
+      } );
+    }
+  } );
+}
+
+function createSession ( accessToken, callback ) {
+  const createQuery = 'INSERT INTO session ( session_hash ) '
+    + `VALUES ( '${accessToken}' ) `
+    + `ON DUPLICATE KEY UPDATE session_hash='${accessToken}';`
+  ;
+  mySqlConnection.query( createQuery, ( response_map ) => {
+    const
+      result_list = response_map.results,
+      result_map  = result_list && result_list[ 0 ],
+      error_msg   = result_map ? null : 'No session found'
+    ;
+    if ( callback ) {
+      callback( error_msg, result_map );
+    }
+  } );
 }
 
 /**
- * Saves the accessToken against the user with the specified userID
- * It provides the results in a callback which takes 2 parameters:
+ * Retrieve the user_id from the row which has the specified accessToken. It
+ * passes the user_id to the callback if it has been retrieved else it passes null
  *
  * @param accessToken
- * @param userID
- * @param callback - takes either an error or null if we successfully saved the accessToken
+ * @param callback - takes the user id if found else null
  */
-function saveAccessToken(accessToken, userID, callback) {
+function getUserIdFromAccessToken ( accessToken, callback ) {
+  // Create query to get the user_id from the row which has the accessToken
+  const getUserQuery = 'SELECT * FROM access_token '
+    + `WHERE access_token = '${accessToken}';`;
 
-  const getUserQuery =  `INSERT INTO access_tokens (access_token, user_id) VALUES ("${accessToken}", ${userID}) ON DUPLICATE KEY UPDATE access_token = "${accessToken}";`
-
-  //execute the query to get the user
-  mySqlConnection.query(getUserQuery, (dataResponseObject) => {
-
-      //pass in the error which may be null and pass the results object which we get the user from if it is not null
-      callback(dataResponseObject.error)
-  })
+  // Execute the query to get the userID
+  mySqlConnection.query( getUserQuery, ( response_map ) => {
+    // Get the user_id from the results ( or null ) and use for callback
+    const user_id = response_map.results
+    && response_map.results.length == 1
+      ? response_map.results[ 0 ].user_id : null;
+    callback( null, user_id );
+  } );
 }
 
-/**
- * Retrieves the userID from the row which has the spcecified bearerToken. It passes the userID
- * to the callback if it has been retrieved else it passes null
+function getSession ( accessToken, callback ) {
+  const sessionQuery = 'SELECT user_id, '
+    + 'UNIX_TIMESTAMP( touch_time ) '
+    + 'AS touch_time_int, access_token '
+    + 'FROM session AS s, access_token AS a '
+    + 'WHERE a.access_token = s.session_hash '
+    + `AND s.session_hash='${accessToken}';`;
+
+  console.warn( 'getSession query is ' + sessionQuery );
+  // Execute the query to get response row
+  mySqlConnection.query( sessionQuery, ( response_map ) => {
+    const
+      floor_int   = Math.floor( Date.now() / 1000 ) - expiryInt,
+      result_list = response_map.results,
+      result_map  = result_list && result_list[ 0 ]
+      ;
+
+    console.warn( 'getSession response', response_map );
+    if ( result_map ) {
+      if ( result_map.touch_time_int < floor_int ) {
+        clearUserSessions( result_map.user_id, function () {
+          callback( null, null );
+        } );
+      }
+      else {
+        callback( null, result_map );
+      }
+    }
+    else {
+      callback( null, null );
+    }
+  } );
+}
+
+/** Save the accessToken against the user with the specified user_id.
+ * Provides the results in a callback which takes 2 parameters:
  *
- * @param bearerToken
- * @param callback - takes the user id we if we got the userID or null to represent an error
+ * @param accessToken
+ * @param user_id
+ * @param callback - Called aon complete with null or error message
  */
-function getUserIDFromBearerToken(bearerToken, callback){
+function storeAccessToken ( accessToken, userId, callback ) {
+  const saveTokenQuery = 'INSERT INTO access_token ( access_token, user_id )'
+    + ` VALUES ( '${accessToken}', '${userId}' )`
+    + ' ON DUPLICATE KEY UPDATE'
+    + ` access_token = '${accessToken}';`;
 
-  //create query to get the userID from the row which has the bearerToken
-  const getUserIDQuery = `SELECT * FROM access_tokens WHERE access_token = '${bearerToken}';`
-
-  //execute the query to get the userID
-  mySqlConnection.query(getUserIDQuery, (dataResponseObject) => {
-
-      //get the userID from the results if its available else assign null
-      const userID = dataResponseObject.results != null && dataResponseObject.results.length == 1 ?
-                                                              dataResponseObject.results[0].user_id : null
-
-      callback(userID)
-  })
+  mySqlConnection.query( saveTokenQuery, ( response_map ) => {
+    if ( response_map.error ) {
+      callback( response_map.error );
+    }
+    else {
+      console.warn( 'Access Token stored', response_map.results );
+      cleanAccessTokenByUserId( userId, callback );
+    }
+  } );
 }
+
+let mySqlConnection;
+function mainFn( injectedMySqlConnection ) {
+  mySqlConnection = injectedMySqlConnection;
+  return {
+    cleanAccessTokenByUserId,
+    clearUserSessions,
+    createSession,
+    getSession,
+    getUserIdFromAccessToken,
+    storeAccessToken,
+  };
+}
+module.exports = mainFn;
+
+

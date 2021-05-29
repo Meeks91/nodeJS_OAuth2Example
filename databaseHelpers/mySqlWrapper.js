@@ -1,27 +1,10 @@
-module.exports = {
+const 
+  mySql = require('mysql'),
+  connectMap = require('../config/credentials.js' );
 
-  query: query
-}
-
-//get the mySql object
-const mySql = require('mysql')
-
-//object which holds the connection to the db
-let connection = null
-
-/**
- * Create the connection to the db
- */
-function initConnection() {
-
-  //set the global connection object
-   connection = mySql.createConnection({
-
-    host: 'localhost',
-    user: 'root',
-    password: 'databasePassword',
-    database: 'oAuth2Test'
-  })
+// Create the connection to the db
+function makeConnectObj() {
+   return mySql.createConnection( connectMap );
 }
 
 /**
@@ -32,23 +15,21 @@ function initConnection() {
  * @param callback - takes a DataResponseObject
  */
 function query(queryString, callback){
+  // Init the connection object. Needs to be done everytime as we call end()
+  //  on the connection after the call is complete
+  let mysqlConnectObj = makeConnectObj();
 
-  //init the connection object. Needs to be done everytime as we call end()
-  //on the connection after the call is complete
-  initConnection()
+  // Connect to the db
+  mysqlConnectObj.connect();
 
-  //connect to the db
-  connection.connect()
+  // Execute the query and collect the results in the callback
+  mysqlConnectObj.query(queryString, function ( error, results, fields ) {
+    console.log('mySql: query: error is: ', error, ' and results are: ', results);
 
-  //execute the query and collect the results in the callback
-  connection.query(queryString, function(error, results, fields){
+    // Disconnect from db
+    mysqlConnectObj.end();
 
-      console.log('mySql: query: error is: ', error, ' and results are: ', results);
-
-    //disconnect from the method
-    connection.end();
-
-    //send the response in the callback
+    // Send response in callback
     callback(createDataResponseObject(error, results))
   })
 }
@@ -68,3 +49,5 @@ function createDataResponseObject(error, results) {
       results: results === undefined ? null : results === null ? null : results
      }
   }
+
+module.exports = { query: query };
